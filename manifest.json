@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "Twitter 圖片下載器",
+  "version": "1.0.0",
+  "description": "在 Twitter 推文中添加圖片下載按鈕，輕鬆下載高畫質圖片",
+  
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  
+  "permissions": [
+    "activeTab",
+    "downloads"
+  ],
+  
+  "host_permissions": [
+    "https://twitter.com/*",
+    "https://x.com/*",
+    "https://pbs.twimg.com/*",
+    "https://abs.twimg.com/*",
+    "https://ton.twitter.com/*"
+  ],
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "https://twitter.com/*",
+        "https://x.com/*"
+      ],
+      "js": ["twitter-image-downloader.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Twitter 圖片下載器",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["https://twitter.com/*", "https://x.com/*"]
+    }
+  ],
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
