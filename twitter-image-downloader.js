@@ -26,7 +26,8 @@ function isTwitterImage(imageSrc) {
   const isThumbImage = imageSrc.includes('/amplify_video_thumb/');
   const isTweetVideoThumb = imageSrc.includes('/tweet_video_thumb/');
   const isExtTwVideoThumb = imageSrc.includes('/ext_tw_video_thumb/');
-  return isTwitterDomain && !isProfileImage && !isThumbImage && !isTweetVideoThumb && !isExtTwVideoThumb;
+  const isResponsiveWeb = imageSrc.includes('/responsive-web/')
+  return isTwitterDomain && !isProfileImage && !isThumbImage && !isTweetVideoThumb && !isExtTwVideoThumb && !isResponsiveWeb;
 }
 
 function generateFileName(tweetId, username) {
