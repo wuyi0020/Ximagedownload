@@ -10,36 +10,43 @@ const ButtonTemplate = `
 
 // ===== 工具函數 =====
 function renderTemplate(template, data) {
-  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-    return data[key] || '';
-  });
+    return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+        return data[key] || "";
+    });
 }
 
 function isTwitterImage(imageSrc) {
-  // 先判斷是不是 Twitter 圖片
-  const isTwitterDomain =
-    imageSrc.includes('pbs.twimg.com') ||
-    imageSrc.includes('abs.twimg.com') ||
-    imageSrc.includes('ton.twitter.com');
-  // 再排除 profile_images
-  const isProfileImage = imageSrc.includes('/profile_images/');
-  const isThumbImage = imageSrc.includes('/amplify_video_thumb/');
-  const isTweetVideoThumb = imageSrc.includes('/tweet_video_thumb/');
-  const isExtTwVideoThumb = imageSrc.includes('/ext_tw_video_thumb/');
-  const isResponsiveWeb = imageSrc.includes('/responsive-web/')
-  return isTwitterDomain && !isProfileImage && !isThumbImage && !isTweetVideoThumb && !isExtTwVideoThumb && !isResponsiveWeb;
+    // 先判斷是不是 Twitter 圖片
+    const isTwitterDomain =
+        imageSrc.includes("pbs.twimg.com") ||
+        imageSrc.includes("abs.twimg.com") ||
+        imageSrc.includes("ton.twitter.com");
+    // 再排除 profile_images
+    const isProfileImage = imageSrc.includes("/profile_images/");
+    const isThumbImage = imageSrc.includes("/amplify_video_thumb/");
+    const isTweetVideoThumb = imageSrc.includes("/tweet_video_thumb/");
+    const isExtTwVideoThumb = imageSrc.includes("/ext_tw_video_thumb/");
+    const isResponsiveWeb = imageSrc.includes("/responsive-web/");
+    return (
+        isTwitterDomain &&
+        !isProfileImage &&
+        !isThumbImage &&
+        !isTweetVideoThumb &&
+        !isExtTwVideoThumb &&
+        !isResponsiveWeb
+    );
 }
 
 function generateFileName(tweetId, username) {
-  // 只允許英數字、底線
-  const cleanUser = username.replace(/[^\w-]/gi, '');
-  return tweetId && cleanUser ? `${tweetId}_${cleanUser}` : `twitter_image`;
+    // 只允許英數字、底線
+    const cleanUser = username.replace(/[^\w-]/gi, "");
+    return tweetId && cleanUser ? `${tweetId}_${cleanUser}` : `twitter_image`;
 }
 
 // ===== 樣式設定 =====
 function addStyles() {
-  const style = document.createElement('style');
-  style.textContent = `
+    const style = document.createElement("style");
+    style.textContent = `
     .image-download-button {
       display: inline-flex;
       align-items: center;
@@ -95,191 +102,210 @@ function addStyles() {
       100% { transform: rotate(360deg); }
     }
   `;
-  document.head.appendChild(style);
+    document.head.appendChild(style);
 }
 
 // ===== DOM 觀察器 =====
 function observeDom(callback) {
-  const observer = new MutationObserver(function (mutations) {
-    mutations.forEach(function (mutation) {
-      mutation.addedNodes.forEach(function ($element) {
-        if ($element instanceof HTMLElement === false) {
-          return false;
-        }
-        if ($element.nodeName === "IMG") {
-          // tweet detail or fullscreen view
-          const $container = $element.closest(
-            "article[role='article'], div[aria-modal='true']"
-          );
-          if ($container) {
-            const $group = $container.querySelector(
-              "[role='group']:last-child"
-            );
-            if ($group) {
-              callback({
-                $image: $element,
-                $group: $group,
-              });
-            }
-          }
-        }
-      });
+    const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function ($element) {
+                if ($element instanceof HTMLElement === false) {
+                    return false;
+                }
+                if ($element.nodeName === "IMG") {
+                    // tweet detail or fullscreen view
+                    const $container = $element.closest("article[role='article'], div[aria-modal='true']");
+                    if ($container) {
+                        const $group = $container.querySelector("[role='group']:last-child");
+                        if ($group) {
+                            callback({
+                                $image: $element,
+                                $group: $group,
+                            });
+                        }
+                    }
+                }
+            });
+        });
     });
-  });
-  observer.observe(document, { childList: true, subtree: true });
+    observer.observe(document, { childList: true, subtree: true });
 }
 
 // ===== 下載功能 =====
 async function downloadImage(imageUrl, fileName) {
-  try {
-    // 保留 format 參數，只改 name=orig
-    const urlObj = new URL(imageUrl);
-    urlObj.searchParams.set('name', 'orig');
-    const originalUrl = urlObj.toString();
+    try {
+        // 保留 format 參數，只改 name=orig
+        const urlObj = new URL(imageUrl);
+        urlObj.searchParams.set("name", "orig");
+        const originalUrl = urlObj.toString();
 
-    // 自動判斷副檔名
-    let ext = 'jpg';
-    const match = originalUrl.match(/format=([a-zA-Z0-9]+)/);
-    if (match) {
-      ext = match[1];
-    }
-
-    chrome.runtime.sendMessage(
-      {
-        action: 'download',
-        url: originalUrl,
-        filename: fileName + '.' + ext
-      },
-      (response) => {
-        if (response && response.success) {
-          // 下載成功
-        } else {
-          alert('下載失敗，請稍後再試');
+        // 自動判斷副檔名
+        let ext = "jpg";
+        const match = originalUrl.match(/format=([a-zA-Z0-9]+)/);
+        if (match) {
+            ext = match[1];
         }
-      }
-    );
-    return true;
-  } catch (error) {
-    console.error('下載失敗:', error);
-    return false;
-  }
+        // alert(fileName + "." + ext);
+        chrome.runtime.sendMessage(
+            {
+                action: "download",
+                url: originalUrl,
+                filename: fileName + "." + ext,
+            },
+            (response) => {
+                if (response && response.success) {
+                    // 下載成功
+                } else {
+                    alert("下載失敗，請稍後再試");
+                }
+            }
+        );
+        return true;
+    } catch (error) {
+        console.error("下載失敗:", error);
+        return false;
+    }
 }
 
 // 主程式
 function initImageDownloader() {
-  // 添加樣式
-  addStyles();
+    // 添加樣式
+    addStyles();
 
-  // 觀察 DOM 變化
-  observeDom(function ({ $group, $image }) {
-    // 檢查是否為 Twitter 圖片
-    if (!isTwitterImage($image.src)) {
-      return;
-    }
-
-    const checkExtensionButton = $group.getAttribute("need-download-img");
-    if (checkExtensionButton && checkExtensionButton.includes($image.src)) {
-      return;
-    }
-    if (checkExtensionButton == null) {
-      $group.setAttribute("need-download-img", `${$image.src}`);
-    }
-    else {
-      $group.setAttribute("need-download-img", `${checkExtensionButton},${$image.src}`);
-    }
-
-
-    // 檢查是否已經添加過按鈕
-    // const checkExtensionButton = $group.getAttribute("data-twitter-image-downloader-extension");
-    // if (checkExtensionButton) {
-    //   return;
-    // }
-
-    // 標記已處理
-    // $group.setAttribute("data-twitter-image-downloader-extension", "true");
-
-
-    // 獲取 SVG 尺寸
-    const svgElement = $group.querySelector("svg");
-    if (!svgElement) return;
-
-    const { width, height } = svgElement.getBoundingClientRect();
-
-    // 創建下載按鈕
-    const $button = document.createElement("button");
-    $button.classList.add("image-download-button");
-    $button.setAttribute("role", "button");
-    $button.setAttribute("title", "下載圖片");
-    $button.insertAdjacentHTML(
-      "beforeend",
-      renderTemplate(ButtonTemplate, {
-        width: width || 20,
-        height: height || 20,
-      })
-    );
-
-    // 如果不是第一次添加按鈕
-    const buttonadded = $group.getAttribute("data-button-added");
-    if (buttonadded == "true") {
-      return;
-    }
-    // 添加按鈕到群組
-    $group.appendChild($button);
-    // 標記已添加按鈕
-    $group.setAttribute("data-button-added", "true");
-
-    // 添加點擊事件
-    $button.addEventListener("click", async function (event) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
-      this.disabled = true;
-      this.classList.add("loading");
-
-      try {
-        // 取得所有要下載的圖片網址清單
-        const needDownloadImg = $group.getAttribute("need-download-img");
-        const imageUrlList = needDownloadImg ? needDownloadImg.split(",") : [];
-
-        // 取得推文ID與帳號（只抓一次）
-        const tweetContainer = $image.closest("article[role='article']");
-        const tweetLink = tweetContainer?.querySelector('a[href*="/status/"]');
-        let tweetId = '';
-        let username = '';
-        if (tweetLink) {
-          const match = tweetLink.getAttribute('href').match(/\/([^\/]+)\/status\/(\d+)/);
-          if (match) {
-            username = match[1];
-            tweetId = match[2];
-          }
+    // 觀察 DOM 變化
+    observeDom(function ({ $group, $image }) {
+        // 檢查是否為 Twitter 圖片
+        if (!isTwitterImage($image.src)) {
+            return;
+        }
+        // 如果 group 是 aria-roledescription="carousel" 的話 將內部圖片都加入倒 下載清單
+        if ($group.getAttribute("aria-roledescription") === "carousel") {
+            const $images = $group.querySelectorAll("img");
+            $images.forEach(($image) => {
+                const checkExtensionButton = $group.getAttribute("need-download-img");
+                if (checkExtensionButton && checkExtensionButton.includes($image.src)) {
+                    return;
+                }
+                if (checkExtensionButton == null) {
+                    $group.setAttribute("need-download-img", `${$image.src}`);
+                } else {
+                    $group.setAttribute("need-download-img", `${checkExtensionButton},${$image.src}`);
+                }
+            });
+            return;
         }
 
-        // 依序下載所有圖片
-        for (let i = 0; i < imageUrlList.length; i++) {
-          const imgUrl = imageUrlList[i];
-          const fileName = `twitter_image/twitter_${tweetId}_${username}_${i+1}`;
-          await downloadImage(imgUrl, fileName);
+        const checkExtensionButton = $group.getAttribute("need-download-img");
+        if (checkExtensionButton && checkExtensionButton.includes($image.src)) {
+            return;
+        }
+        if (checkExtensionButton == null) {
+            $group.setAttribute("need-download-img", `${$image.src}`);
+        } else {
+            $group.setAttribute("need-download-img", `${checkExtensionButton},${$image.src}`);
         }
 
-        this.classList.remove("loading");
-        this.classList.add("success");
-        setTimeout(() => {
-          this.disabled = false;
-          this.classList.remove("success");
-        }, 3000);
-      } catch (error) {
-        console.error('下載圖片時發生錯誤:', error);
-        this.classList.remove("loading");
-        this.disabled = false;
-        alert('下載失敗，請稍後再試');
-      }
+        // 檢查是否已經添加過按鈕
+        // const checkExtensionButton = $group.getAttribute("data-twitter-image-downloader-extension");
+        // if (checkExtensionButton) {
+        //   return;
+        // }
+
+        // 標記已處理
+        // $group.setAttribute("data-twitter-image-downloader-extension", "true");
+
+        // 獲取 SVG 尺寸
+        const svgElement = $group.querySelector("svg");
+        if (!svgElement) return;
+
+        const { width, height } = svgElement.getBoundingClientRect();
+
+        // 創建下載按鈕
+        const $button = document.createElement("button");
+        $button.classList.add("image-download-button");
+        $button.classList.add("哩喜勒考未啥檔名不對");
+        $button.setAttribute("role", "button");
+        $button.setAttribute("title", "下載圖片");
+        $button.insertAdjacentHTML(
+            "beforeend",
+            renderTemplate(ButtonTemplate, {
+                width: width || 20,
+                height: height || 20,
+            })
+        );
+
+        // 如果不是第一次添加按鈕
+        const buttonadded = $group.getAttribute("data-button-added");
+        if (buttonadded == "true") {
+            return;
+        }
+        // 添加按鈕到群組
+        $group.appendChild($button);
+        // 標記已添加按鈕
+        $group.setAttribute("data-button-added", "true");
+
+        // 添加點擊事件
+        $button.addEventListener("click", async function (event) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            this.disabled = true;
+            this.classList.add("loading");
+
+            try {
+                // 取得所有要下載的圖片網址清單
+                const needDownloadImg = $group.getAttribute("need-download-img");
+                const imageUrlList = needDownloadImg ? needDownloadImg.split(",") : [];
+
+                // 取得推文ID與帳號（只抓一次）
+                const tweetContainer = $group.closest("article[role='article']");
+                const tweetLink = tweetContainer?.querySelector('a[href*="/status/"]');
+                let tweetId = "";
+                let username = "";
+                if (tweetLink) {
+                    const match = tweetLink.getAttribute("href").match(/\/([^\/]+)\/status\/(\d+)/);
+                    if (match) {
+                        username = match[1];
+                        tweetId = match[2];
+                    }
+                } else {
+                    // CurrentURL 取得當前頁面網址
+                    // 如果沒有找到推文ID，則使用當前頁面網址 範例https://x.com/{username}/status/tweet_id/photo/1
+                    CurrentURL = window.location.href;
+                    const match = CurrentURL.match(/\/([^\/]+)\/status\/(\d+)/);
+                    if (match) {
+                        username = match[1];
+                        tweetId = match[2];
+                    }
+                }
+
+                // 依序下載所有圖片
+                for (let i = 0; i < imageUrlList.length; i++) {
+                    const imgUrl = imageUrlList[i];
+                    const fileName = `twitter_image/twitter_${tweetId}_${username}_${i + 1}p`;
+                    await downloadImage(imgUrl, fileName);
+                }
+
+                this.classList.remove("loading");
+                this.classList.add("success");
+                setTimeout(() => {
+                    this.disabled = false;
+                    this.classList.remove("success");
+                }, 3000);
+            } catch (error) {
+                console.error("下載圖片時發生錯誤:", error);
+                this.classList.remove("loading");
+                this.disabled = false;
+                alert("下載失敗，請稍後再試");
+            }
+        });
     });
-  });
 }
 
 // 啟動插件
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initImageDownloader);
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initImageDownloader);
 } else {
-  initImageDownloader();
+    initImageDownloader();
 }
